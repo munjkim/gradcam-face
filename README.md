@@ -20,7 +20,7 @@ Grad-CAM (Selvaraju et al., ICCV 2017) extended from class scores to face-verifi
 | torchvision | 0.25.0+cu130 |
 | CUDA (wheel) | 13.0 |
 | Environment | conda env `cuda130` |
-| Python | _TODO: `python --version`_ |
+| Python | 3.11.15 |
 | CPU / RAM | _TODO_ |
 
 Check command:
