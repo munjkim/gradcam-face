@@ -9,7 +9,28 @@ Grad-CAM (Selvaraju et al., ICCV 2017) extended from class scores to face-verifi
 
 ## Third-party parts (declare in the report)
 - torchvision ResNet-18 ImageNet weights (backbone)
-- LFW dataset loader (torchvision / scikit-learn)
+- LFW dataset: deep-funneled images + official split CSVs ([Kaggle mirror](https://www.kaggle.com/datasets/jessicali9530/lfw-dataset)); loading code is our own (`data.py`)
+- torchvision `transforms` (preprocessing)
+
+## Data
+LFW deep-funneled (Kaggle CSV version), placed in `data/` (git-ignored).
+Images: `data/lfw-deepfunneled/lfw-deepfunneled/<name>/<name>_<NNNN>.jpg`.
+CSV rows point to images by `name` + image number.
+
+| File | Content | Used in `data.py` |
+|---|---|---|
+| `lfw_allnames.csv` | All 5,749 people: `name, images` | – |
+| `lfw_readme.csv` | Official README as CSV (not data) | – |
+| **View 1 (development)** — train/test people do not overlap | | |
+| `peopleDevTrain.csv` | Train people: `name, images` | ② training images (people with ≥ 2 images) |
+| `peopleDevTest.csv` | Test people | – |
+| `matchpairsDevTrain.csv` | Train same-person pairs: `name, num1, num2` | – |
+| `mismatchpairsDevTrain.csv` | Train different-person pairs: `name1, num1, name2, num2` | – |
+| `matchpairsDevTest.csv` | Test same-person pairs (500) | ① eval pairs (label 1) |
+| `mismatchpairsDevTest.csv` | Test different-person pairs (500) | ① eval pairs (label 0) |
+| **View 2 (final reporting)** | | |
+| `pairs.csv` | 6,000 pairs in 10 folds; match (3 cols) and mismatch (4 cols) rows mixed | – (for comparison with published results) |
+| `people.csv` | People split into 10 folds | – |
 
 ## Apparatus
 | Item | Value |
