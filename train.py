@@ -78,6 +78,11 @@ def make_model():
 # [4] 학습 함수
 def train():
     model = make_model()
+
+    # GPU 사용 확인
+    print(f"model on: {next(model.parameters()).device}")
+    if device == "cuda": print(f"device name: {torch.cuda.get_device_name(0)}")
+
     loader = DataLoader(TripletDataset(),
                         batch_size=BATCH_SIZE,
                         shuffle=True,
@@ -118,12 +123,12 @@ def train():
 
         # 평균 loss와 걸린 시간 출력
         print(f"epoch {epoch + 1}/{EPOCHS}, loss = {total_loss / len(loader):.4f}")
-        print(f"epoch 학습 시간: {time.time() - start_time_epoch:.1f}")
+        print("epoch 학습 시간: {:.0f}분 {:.2f}초".format(*divmod(time.time() - start_time_epoch, 60)))
 
     # checkpoints/ 폴더를 만들고 model.state_dict()를 torch.save로 저장
     CKPT_DIR.mkdir(exist_ok=True)
     torch.save(model.state_dict(), CKPT_DIR / "triplet.pt")
-    print(f"총 학습 시간: {time.time() - start_time:.1f}")
+    print("총 학습 시간: {:.0f}분 {:.2f}초".format(*divmod(time.time() - start_time, 60)))
 
 
 # [5] main
