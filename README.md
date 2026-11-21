@@ -11,6 +11,7 @@ Grad-CAM (Selvaraju et al., ICCV 2017) extended from class scores to face-verifi
 - torchvision ResNet-18 ImageNet weights (backbone)
 - LFW dataset: deep-funneled images + official split CSVs ([Kaggle mirror](https://www.kaggle.com/datasets/jessicali9530/lfw-dataset)); loading code is our own (`data.py`)
 - torchvision `transforms` (preprocessing)
+- Cat-and-dog example photo from the Grad-CAM paper (Selvaraju et al., ICCV 2017, Fig. 1), taken from the authors' repository: [`ramprs/grad-cam/images/cat_dog.jpg`](https://github.com/ramprs/grad-cam/blob/master/images/cat_dog.jpg). Stored unmodified at `data/cat_dog.jpg` (640×480) only to check our Grad-CAM against the paper figure. That repository states no license; all rights remain with the original authors.
 
 ## Data
 LFW deep-funneled (Kaggle CSV version), placed in `data/` (git-ignored).
