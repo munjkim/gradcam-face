@@ -5,7 +5,7 @@ train.py: triplet loss로 ResNet-18을 LFW 얼굴 구별용으로 fine-tuning한
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from torchvision import models
+# from torchvision import models
 
 import time
 import random
@@ -13,9 +13,11 @@ from pathlib import Path
 from PIL import Image
 from data import train_images, transform
 
+from baseline import make_model
+
 # [1] 상수 설정
 device = "cuda" if torch.cuda.is_available() else "cpu"
-EPOCHS = 1
+EPOCHS = 10
 BATCH_SIZE = 32
 LR = 1e-4
 MARGIN = 0.2
@@ -66,15 +68,8 @@ class TripletDataset(Dataset):
 
         return anchor_tensor, positive_tensor, negative_tensor
 
-# [3] 모델 만드는 함수
-def make_model():
-    # baseline.py와 동일하지만, eval() 제외
-    # resnet 18 불러오고, 마지막 fc층을 변환해서 최종 출력을 512차원으로
-    model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
-    model.fc = torch.nn.Identity()
-    model.to(device) # 모델을 gpu로 보냄
-    return model
-    
+# [3] 모델 만드는 함수는 baseline.py의 make_model 그대로 import
+
 # [4] 학습 함수
 def train():
     model = make_model()
