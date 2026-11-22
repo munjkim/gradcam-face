@@ -27,7 +27,6 @@ def embed(model, path):
 
     transform 후 배치 추가 후 모델을 통과한다.
     """
-    
     # 입력을 GPU로 보냄.
     x = transform(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
     return model(x)
@@ -35,6 +34,10 @@ def embed(model, path):
 
 # 평가 쌍 1,000개 각각에 대해 cosine 유사도 계산
 def get_scores(model):
+    """평가 쌍 1,000개에 대한 유사도 계산 후
+
+    return scores, labels
+    """
     scores, labels = [], []
     for p1, p2, label in eval_pairs():
         v1_embed, v2_embed = embed(model, p1), embed(model, p2)
@@ -47,6 +50,10 @@ def get_scores(model):
 
 # EER 계산
 def compute_eer(scores, labels):
+    """scores와 labels를 바탕으로 eer 계산
+
+    return: eer, threshold[idx]
+    """
     fpr, tpr, threshold = roc_curve(labels, scores)
     fnr = 1 - tpr
     idx = np.argmin(np.abs(fpr-fnr))
