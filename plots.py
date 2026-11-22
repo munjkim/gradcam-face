@@ -1,0 +1,128 @@
+"""plots.py: baseline과 학습 모델의 점수(.npz)로 ppt용 figure 제작하는 코드"""
+
+# [0] import
+#   numpy, matplotlib.pyplot, Path
+#   scipy.stats의 gaussian_kde, norm
+#   sklearn.metrics의 roc_curve, det_curve, auc
+#   baseline.py의 compute_eer, RESULTS_DIR  (EER 계산을 평가 코드와 똑같이 하려고)
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from pathlib import Path
+
+from scipy.stats import norm
+from sklearn.metrics import roc_curve, det_curve, auc, DetCurveDisplay
+
+from baseline import compute_eer, RESULTS_DIR
+
+
+# 상수 설정
+FIG_DIR = Path(__file__).parent / "figures"
+RUNS = [("Baseline (ImageNet)", "baseline.npz"), ("Triplet fine-tuned", "trained.npz")]
+
+
+# 결과 불러오는 함수
+#   npz를 np.load로 열어 scores, labels를 numpy 배열로 반환
+def load_npz(fname):
+    with np.load(RESULTS_DIR / fname) as data:
+        return data["scores"], data["labels"]
+
+# 히스토그램 + KDE
+def plot_hist():
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True, sharey=True)
+    bins = np.linspace(0.3, 1.0, 30)
+
+    for ax, (name, fname) in zip(axes, RUNS):
+        scores, labels = load_npz(fname)
+        eer, threshold = compute_eer(scores, labels)
+
+        labels = np.where(labels == 1, "Same", "Diff")
+
+        sns.histplot(
+            x=scores,
+            hue=labels,
+            stat="density",
+            kde=True,
+            common_norm=False, ax=ax,
+            bins=bins
+            )
+
+        # threshold 세로선 (빨간 점선)
+        line = ax.axvline(threshold, color="red", linestyle="--", label=f"threshold {threshold:.3f}")
+
+        # seaborn이 만든 Same/Diff 범례에 threshold 선을 합쳐 다시 그림
+        # claude opus 5.5 의 도움을 받음.
+        legend = ax.get_legend()
+        handles = list(legend.legend_handles) + [line]
+        texts = [t.get_text() for t in legend.get_texts()] + [line.get_label()]
+        ax.legend(handles, texts)
+
+        ax.set_title(f"{name} (EER {eer*100:.2f}%)")
+
+    fig.supxlabel("cosine similarity")
+
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "hist_kde.png", dpi=300)
+
+    plt.close(fig)
+
+# [4] ROC 커브
+#   - 한 그림에 두 곡선
+#   - roc_curve → fpr, tpr 를 plot
+#   - 범례에 AUC(auc(fpr, tpr))와 EER 표시
+#   - 대각선(무작위 추측 기준선)을 점선으로
+#   - savefig
+
+def plot_roc():
+    fig, ax = plt.subplots(figsize=(5, 5))
+
+    for name, fname in RUNS:
+        scores, labels = load_npz(fname)
+        eer, threshold = compute_eer(scores, labels)        
+        
+        fpr, tpr, _ = roc_curve(labels, scores)
+        roc_auc = auc(fpr, tpr)
+
+        ax.plot(fpr, tpr, label=f"{name} (AUC {roc_auc:.3f}, EER {eer*100:.2f}%)")
+        ax.set_xlabel("FPR")
+        ax.set_ylabel("TPR")
+        
+    ax.plot([0, 1], [0, 1], "k--", label="Chance")
+    ax.legend(loc="lower right")
+
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "roc.png", dpi=300)
+
+    plt.close(fig)
+
+# DET 커브
+def plot_det():
+    fig, ax = plt.subplots(figsize=(5,5))
+
+    for name, fname in RUNS:
+        scores, labels = load_npz(fname)
+        eer, _ = compute_eer(scores, labels)
+
+        disp = DetCurveDisplay.from_predictions(labels, scores, ax=ax, name=f"{name} (EER {eer*100:.2f}%)")
+        color = disp.line_.get_color()
+
+        ax.plot(norm.ppf(eer), norm.ppf(eer), "o", color=color)
+
+    # y=x 그리기
+    ax.plot(ax.get_xlim(), ax.get_xlim(), "k--")
+
+    ax.set_xlabel("FPR")
+    ax.set_ylabel("FNR")
+    ax.legend()
+
+    fig.tight_layout()
+    fig.savefig(FIG_DIR / "det.png", dpi=300)
+    plt.close(fig)
+
+if __name__ == "__main__":
+    FIG_DIR.mkdir(exist_ok=True)
+    plot_hist()
+    plot_roc()
+    plot_det()
