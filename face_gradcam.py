@@ -1,9 +1,8 @@
-# [0] import: gradcam.py의 gradcam, evaluate.py의 load_trained_model,
-#             baseline.py의 make_model, data.py의 eval_pairs와 transform
 from gradcam import gradcam
 from evaluate import load_trained_model
-from baseline import make_model, device
+from baseline import make_model, device, compute_eer
 from data import eval_pairs, transform
+from plots import load_npz
 
 import torch
 import torch.nn.functional as F
@@ -16,15 +15,11 @@ from pathlib import Path
 
 FIG_DIR = Path(__file__).parent / "figures"
 
-# [1] score_fn: out(2, 512) → cos(out[0], out[1])  (F.cosine_similarity, 숫자 하나로)
+# score_fn: out(2, 512) → cos(out[0], out[1])  (F.cosine_similarity, 숫자 하나로)
 def cos_score(out):
     return F.cosine_similarity(out[0:1], out[1:2])[0]  # (2, 512) → (1,)
 
-# [2] 쌍 하나를 설명하는 함수 explain_pair(model, path_a, path_b)
-#   - 두 사진을 transform → torch.cat 또는 torch.stack으로 (2, 3, 224, 224)
-#   - gradcam(model, model.layer4, x, score_fn) → cam (2, 1, 7, 7)
-#   - 224×224로 키우고, 사진마다 따로 0~1 정규화
-#   - 유사도 y 값도 함께 반환
+# 쌍 하나를 설명하는 함수 explain_pair(model, path_a, path_b)
 def explain_pair(model, path_a, path_b):
     img_a = transform(Image.open(path_a).convert("RGB")).unsqueeze(0)  # (1, 3, 224, 224)
     img_b = transform(Image.open(path_b).convert("RGB")).unsqueeze(0)  # (1, 3, 224, 224)
@@ -40,9 +35,7 @@ def explain_pair(model, path_a, path_b):
 
     return cam_resized[0].cpu().numpy(), cam_resized[1].cpu().numpy(), y  # a 히트맵 (224, 224), b 히트맵 (224, 224), y 값 반환
 
-# [3] 실행부: 몇 쌍을 골라 baseline / triplet 모델로 각각 그리기
-#   - 칸 구성 예: [a 원본 | a 히트맵 | b 히트맵 | b 원본], 제목에 y 값
-#   - figures/face_gradcam_*.png
+# 몇 쌍을 골라 baseline / triplet 모델로 각각 그리기
 if __name__ == "__main__":
     baseline_model = make_model().eval()
     triplet_model = load_trained_model()
@@ -50,14 +43,37 @@ if __name__ == "__main__":
     RUNS = [("Baseline", baseline_model), ("Triplet", triplet_model)]
 
     pairs = eval_pairs()  # (path_a, path_b, label) 리스트
-    selected_pairs = [
-        pairs[0],  # same
-        pairs[1],  # same
-        pairs[500],  # diff
-        pairs[501],  # diff
-    ]
+    # selected_pairs = [
+    #     pairs[0],  # same
+    #     pairs[1],  # same
+    #     pairs[500],  # diff
+    #     pairs[501],  # diff
+    # ]
 
-    for i, (path_a, path_b, label) in enumerate(selected_pairs):
+    scores, labels = load_npz("trained.npz")
+    eer, threshold = compute_eer(scores, labels)
+    tp = (labels == 1) & (scores >= threshold)
+    tn = (labels == 0) & (scores < threshold)
+    fp = (labels == 0) & (scores >= threshold)
+    fn = (labels == 1) & (scores < threshold)
+
+    print("TP:", np.sum(tp), "TN:", np.sum(tn), "FP:", np.sum(fp), "FN:", np.sum(fn))
+
+    def pick(mask, highest):
+        idx = np.where(mask)[0]
+        if highest:
+            idx = idx[np.argmax(scores[idx])]
+        else:
+            idx = idx[np.argmin(scores[idx])]
+        return idx
+
+    selected_pairs = [
+        ("TP", pick(tp, True)), ("TN", pick(tn, False)),
+        ("FP", pick(fp, True)), ("FN", pick(fn, False))
+        ]
+
+    for case, idx in selected_pairs:
+        path_a, path_b, label = pairs[idx]
         fig, axes = plt.subplots(len(RUNS), 4, figsize=(12, 6))
 
         crop = transforms.Compose([transforms.CenterCrop(150), transforms.Resize((224, 224))])  # 원본 사진을 224×224로 자르기
@@ -85,8 +101,8 @@ if __name__ == "__main__":
             axes[row, 3].set_title(f"{name} - B\nCosine similarity: {y:.4f}")
             axes[row, 3].axis("off")
 
-        fig.suptitle("Same person" if label == 1 else "Different person")
+        fig.suptitle(f"{case} (pair #{idx}): {'Same' if label == 1 else 'Different'} person")
         fig.tight_layout()
-        fig.savefig(FIG_DIR / f"face_gradcam_{i}.png", dpi=150, bbox_inches="tight")
+        fig.savefig(FIG_DIR / f"face_gradcam_{case}.png", dpi=150, bbox_inches="tight")
         plt.close(fig)
         
