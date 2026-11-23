@@ -32,6 +32,26 @@ Protocol: LFW View 1 (train and test people do not overlap; checked in `data.py`
 Triplet training: random triplets, L2-normalized 512-d embeddings, margin 0.2, Adam lr 1e-4, batch 32, 10 epochs, seed 404.
 Grad-CAM check (`gradcam.py`): ResNet-18 `layer4`, classes tiger cat (282) / boxer (242) qualitatively reproduce paper Fig. 1 (f, l) → `figures/gradcam_cat_dog.png`.
 
+### Grad-CAM on face similarity
+- `face_gradcam.py`: the two faces are batched and y = cos(f(a), f(b)) is explained on `layer4`, one heatmap per face. Example pairs per decision case (TP 441 / TN 441 / FP 59 / FN 59 at the triplet EER threshold; most extreme score per case) → `figures/face_gradcam_{TP,TN,FP,FN}.png`.
+- `avg_gradcam.py`: heatmaps averaged over all 1,000 test pairs. Center ratio = share of heatmap mass in the central 112×112 of the 224×224 input (uniform = 0.25) → `figures/avg_gradcam.png`.
+
+| Center ratio | TP | TN | FP | FN |
+|---|---|---|---|---|
+| Baseline | 0.27 | 0.25 | 0.27 | 0.26 |
+| Triplet | 0.22 | 0.08 | 0.17 | 0.16 |
+
+- `occlusion.py`: test EER with part of the input replaced by the ImageNet mean color → `figures/occlusion.png`.
+
+| Test EER | Full | Center only | Border only |
+|---|---|---|---|
+| Baseline | 26.3% | 33.6% | 29.0% |
+| Triplet | 11.8% | 19.2% | 23.1% |
+
+Finding: the average Grad-CAM of the triplet model concentrates on the border (hair, background), against our expectation. Occlusion shows the face center is still the more informative region for it (19.2% vs 23.1%), while the border alone also carries identity cues (23.1%, better than the unoccluded baseline). Grad-CAM keeps only positive evidence (ReLU) and each map is min-max normalized, so it over-emphasizes the border.
+
+AI assistance: `avg_gradcam.py` and `occlusion.py` were written by an AI assistant (Claude) at the student's request and reviewed by the student; a few lines in `plots.py` are marked in comments. All other code was written by the student, with AI used for explanation and review.
+
 ## Apparatus
 | Item | Value |
 |---|---|
