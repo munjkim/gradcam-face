@@ -8,30 +8,29 @@ Grad-CAM (Selvaraju et al., ICCV 2017) extended from class scores to face-verifi
 > Allowed: explaining concepts, reviewing the student's code, debugging hints, experiment design.
 
 ## Third-party parts (declare in the report)
-- torchvision ResNet-18 ImageNet weights (backbone)
+- torchvision ResNet-18 ImageNet weights (`IMAGENET1K_V1`): baseline, initialization for triplet training, Grad-CAM check
 - LFW dataset: deep-funneled images + official split CSVs ([Kaggle mirror](https://www.kaggle.com/datasets/jessicali9530/lfw-dataset)); loading code is our own (`data.py`)
 - torchvision `transforms` (preprocessing)
-- Cat-and-dog example photo from the Grad-CAM paper (Selvaraju et al., ICCV 2017, Fig. 1), taken from the authors' repository: [`ramprs/grad-cam/images/cat_dog.jpg`](https://github.com/ramprs/grad-cam/blob/master/images/cat_dog.jpg). Stored unmodified at `data/cat_dog.jpg` (640×480) only to check our Grad-CAM against the paper figure. That repository states no license; all rights remain with the original authors.
+- Cat-and-dog example photo from the Grad-CAM paper (Selvaraju et al., ICCV 2017, Fig. 1), taken from the authors' repository: [`ramprs/grad-cam/images/cat_dog.jpg`](https://github.com/ramprs/grad-cam/blob/master/images/cat_dog.jpg). Kept locally and unmodified at `img/cat_dog.jpg` (640×480, git-ignored) only to check our Grad-CAM against the paper figure. That repository states no license; all rights remain with the original authors.
+- Authors' Grad-CAM code ([`ramprs/grad-cam`](https://github.com/ramprs/grad-cam), Torch/Lua) was read to check class indices, input size, target layer and formula; no code was reused.
 
 ## Data
 LFW deep-funneled (Kaggle CSV version), placed in `data/` (git-ignored).
-Images: `data/lfw-deepfunneled/lfw-deepfunneled/<name>/<name>_<NNNN>.jpg`.
-CSV rows point to images by `name` + image number.
+Images: `data/lfw-deepfunneled/lfw-deepfunneled/<name>/<name>_<NNNN>.jpg`; CSV rows point to images by `name` + image number.
 
-| File | Content | Used in `data.py` |
-|---|---|---|
-| `lfw_allnames.csv` | All 5,749 people: `name, images` | – |
-| `lfw_readme.csv` | Official README as CSV (not data) | – |
-| **View 1 (development)** — train/test people do not overlap | | |
-| `peopleDevTrain.csv` | Train people: `name, images` | ② training images (people with ≥ 2 images) |
-| `peopleDevTest.csv` | Test people | – |
-| `matchpairsDevTrain.csv` | Train same-person pairs: `name, num1, num2` | – |
-| `mismatchpairsDevTrain.csv` | Train different-person pairs: `name1, num1, name2, num2` | – |
-| `matchpairsDevTest.csv` | Test same-person pairs (500) | ① eval pairs (label 1) |
-| `mismatchpairsDevTest.csv` | Test different-person pairs (500) | ① eval pairs (label 0) |
-| **View 2 (final reporting)** | | |
-| `pairs.csv` | 6,000 pairs in 10 folds; match (3 cols) and mismatch (4 cols) rows mixed | – (for comparison with published results) |
-| `people.csv` | People split into 10 folds | – |
+Protocol: LFW View 1 (train and test people do not overlap; checked in `data.py`).
+- Train: `peopleDevTrain.csv`, people with ≥ 2 images (needed for a triplet positive) → 1,184 people, 6,671 images
+- Test: `matchpairsDevTest.csv` + `mismatchpairsDevTest.csv` → 1,000 pairs (500 same / 500 different)
+- No validation split: hyperparameters fixed before training; test pairs evaluated once.
+
+## Results
+| Model | Test EER | AUC | EER threshold |
+|---|---|---|---|
+| ResNet-18 ImageNet (`baseline.py`) | 26.30% | 0.821 | 0.8131 |
+| + triplet fine-tuning (`train.py`, `evaluate.py`) | 11.80% | 0.950 | 0.8667 |
+
+Triplet training: random triplets, L2-normalized 512-d embeddings, margin 0.2, Adam lr 1e-4, batch 32, 10 epochs, seed 404.
+Grad-CAM check (`gradcam.py`): ResNet-18 `layer4`, classes tiger cat (282) / boxer (242) qualitatively reproduce paper Fig. 1 (f, l) → `figures/gradcam_cat_dog.png`.
 
 ## Apparatus
 | Item | Value |
