@@ -38,7 +38,7 @@ def gradcam(model, layer, x, score_fn):
     # cam = ReLU(Σ α·A)
     cam = F.relu((alpha * A).sum(dim=1, keepdim=True))
 
-    return cam
+    return cam, y.item()  # (B, 1, 7, 7), y 값 반환
         
 
 # cat_dog 이미지에 대해 Grad-CAM을 적용하여 확인하는 main 함수
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         score_fn = lambda out: out[0, cls]
 
         # gradcam 호출
-        cam = gradcam(model, model.layer4, x, score_fn)
+        cam, _ = gradcam(model, model.layer4, x, score_fn)
 
         # cam을 원본 크기로 키워 사진 위에 겹쳐 그림
         cam_resized = F.interpolate(cam, size=img.size[::-1], mode="bilinear", align_corners=False)
