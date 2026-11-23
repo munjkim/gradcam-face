@@ -1,11 +1,5 @@
 """plots.py: baseline과 학습 모델의 점수(.npz)로 ppt용 figure 제작하는 코드"""
 
-# [0] import
-#   numpy, matplotlib.pyplot, Path
-#   scipy.stats의 gaussian_kde, norm
-#   sklearn.metrics의 roc_curve, det_curve, auc
-#   baseline.py의 compute_eer, RESULTS_DIR  (EER 계산을 평가 코드와 똑같이 하려고)
-
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -68,13 +62,6 @@ def plot_hist():
     fig.savefig(FIG_DIR / "hist_kde.png", dpi=300)
 
     plt.close(fig)
-
-# [4] ROC 커브
-#   - 한 그림에 두 곡선
-#   - roc_curve → fpr, tpr 를 plot
-#   - 범례에 AUC(auc(fpr, tpr))와 EER 표시
-#   - 대각선(무작위 추측 기준선)을 점선으로
-#   - savefig
 
 def plot_roc():
     fig, ax = plt.subplots(figsize=(5, 5))
