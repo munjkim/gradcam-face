@@ -4,8 +4,8 @@ IC614c Computer Vision final project (DGIST, 2026 Fall).
 Grad-CAM (Selvaraju et al., ICCV 2017) extended from class scores to face-verification similarity: y = cos(f(a), f(b)).
 
 > **Rule for any AI assistant working in this repo:** do NOT write implementation code here.
-> All project code must be written by the student (course plagiarism/AI check, detection = F).
-> Allowed: explaining concepts, reviewing the student's code, debugging hints, experiment design.
+> All project code must be written by the author (course plagiarism/AI check, detection = F).
+> Allowed: explaining concepts, reviewing the author's code, debugging hints, experiment design.
 
 ## Third-party parts (declare in the report)
 - torchvision ResNet-18 ImageNet weights (`IMAGENET1K_V1`): baseline, initialization for triplet training, Grad-CAM check
@@ -50,7 +50,7 @@ Grad-CAM check (`gradcam.py`): ResNet-18 `layer4`, classes tiger cat (282) / box
 
 Finding: the average Grad-CAM of the triplet model concentrates on the border (hair, background), against our expectation. Occlusion shows the face center is still the more informative region for it (19.2% vs 23.1%), while the border alone also carries identity cues (23.1%, better than the unoccluded baseline). Grad-CAM keeps only positive evidence (ReLU) and each map is min-max normalized, so it over-emphasizes the border.
 
-AI assistance: `avg_gradcam.py` and `occlusion.py` were written by an AI assistant (Claude) at the student's request and reviewed by the student; a few lines in `plots.py` are marked in comments. All other code was written by the student, with AI used for explanation and review.
+AI assistance: `avg_gradcam.py` and `occlusion.py` were written by an AI assistant (Claude) at the author's request and reviewed by the author; a few lines in `plots.py` are marked in comments. All other code was written by the author, with AI used for explanation and review.
 
 ## Apparatus
 | Item | Value |
