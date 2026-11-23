@@ -62,7 +62,6 @@ AI assistance: `avg_gradcam.py` and `occlusion.py` were written by an AI assista
 | CUDA (wheel) | 13.0 |
 | Environment | conda env `cuda130` |
 | Python | 3.11.15 |
-| CPU / RAM | _TODO_ |
 
 Check command:
 ```
